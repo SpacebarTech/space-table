@@ -1,0 +1,30 @@
+extends LAYOUT.pug
+
+block customCSS
+    link(rel='stylesheet' type='text/css' href='/static/css/space-table.css')
+
+block content
+    space-table(
+
+    v-bind:columns='table.columns'
+    v-bind:data='table.rows'
+    v-bind:options='table.options'
+    v-bind:sort="{ age: sortAgeColumn }"
+    v-bind:render='{ progress: renderProgressBar }'
+    v-bind:controls='{ close : removeRow }'
+    v-bind:show-filters='true'
+    v-bind:show-export='true'
+    v-bind:initial-columns='[]'
+    v-bind:column-packages='{}'
+    v-bind:no-data='"No Data Present"'
+
+    @row-clicked='logEvent'
+    @items-selected='logEvent'
+    @column-clicked='logEvent'
+    @control-clicked='logEvent'
+
+    )
+
+block customJS
+    script(src='/static/js/space-table.js')
+    script(src='/static/js/space-table-test.js')

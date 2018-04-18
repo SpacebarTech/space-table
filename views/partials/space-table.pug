@@ -1,0 +1,139 @@
+//-
+				- Space Table
+				- v 2.0 - 8.2.2017
+				-//
+script#space-table(type='text/x-template')
+	.space-table
+		.top-bar
+			.search-container
+				i.material-icons search
+				input(type='text', v-model='searchQuery', v-bind:placeholder='settings.searchPlaceHolder')
+			.export-csv-button( @click='exportCSV()' v-if='showExport' )
+				a.csv-export CSV
+			.settings-icon-container
+				a.settings-icon.material-icons(@click="settingsIconClick" id="settingsIcon") settings
+				.settings-panel(v-bind:class='{ open: settingsPanelOpen }')
+					a.settings-panel-close.material-icons
+					.heading
+						h1 Settings
+						.close(@click='settingsIconClick')
+							i.material-icons close
+							p close
+					.settings-column.column-select
+						h2 Columns
+						.column-item(
+						v-for='column in cols'
+						v-if='column.type !== "control" && column.type !== "icon" && !column.isBend'
+
+						)
+							label.control.control-checkbox {{stripBR( column.name )}}
+								input(
+								type='checkbox'
+								v-model='column.visible'
+								@click="columnSelectorClick()"
+								)
+								.control_indicator
+					.settings-column.column-packages(v-if='columnPackages.length > 0')
+						h2 Column Packages
+						.column-item
+							label.control.control-radio All Columns
+								input(
+								type='radio'
+								name='radio'
+								@click='columnPackageSelect("All")'
+								id='allColumnsSelector'
+								)
+								.control_indicator
+						.column-item(
+						v-for='package in columnPackages'
+						)
+							label.control.control-radio {{package.name}}
+								input(
+								type='radio'
+								name='radio'
+								@click='columnPackageSelect(package.columns)'
+								)
+								.control_indicator
+			.paginate-wrapper
+				p SHOW
+				select(v-model='pageLength')
+					option(value='10') 10
+					option(value='25') 25
+					option(value='50') 50
+					option(value='100') 100
+				p ENTRIES
+		.rows
+			.row.header(v-bind:class='{ checkable: settings.selectable }')
+				.th.cell.space-table-header(
+				v-for='column in cols'
+				v-if='column.visible && !column.isBend'
+				v-bind:class='[{ sorted: sortedColumn == column.key, up : sortedColumn == column.key && sortDirection == 1, down : sortedColumn == column.key && sortDirection == -1 }, column.class]'
+				v-bind:style='column.style'
+				)
+					p(v-if='column.type !== "control" && column.type !== "icon"' v-html='column.name' @click.stop='sortColumn( column )')
+					.control(v-else ref='controls')
+						i.material-icons(v-if='column.hasOwnProperty("icon")') {{ column.icon }}
+						.button(v-else-if='column.hasOwnProperty("button")') {{ column.button }}
+					.filter-container(v-if="showFilters")
+						<br>
+						input.column-filter(
+						v-if='column.type !== "control" && column.type !== "icon"'
+						v-bind:class='[`column-filter-${column.key}`, { filtered : inputFilters[column.key] !== "" }]'
+						v-model='inputFilters[column.key]'
+						placeholder='Filter'
+						)
+
+
+			.row.clickable(v-for='( row, rIndex ) in activeRows', v-bind:class='{ selected: selectedMap[ row[ settings.uniqueKey ] ], checkable: settings.selectable }')
+				.checkbox-wrapper(v-if='settings.selectable', @click.prevent='toggleRow( row )')
+					.checkbox
+				.td.cell(
+				v-for='( column, cIndex ) in cols'
+				v-if='column.visible && !column.isBend'
+				v-bind:class='[column.columnClass, { "has-hover-text" : hasHoverText( column ) }]'
+					@click='emitCellClick( rIndex, column.key )'
+				v-bind:style='column.style'
+				v-bind:title='getTitle( column, row )'
+				)
+
+					//- regular column item
+					p(v-if='!column.type || column.type == "default" ') {{ row[ column.key ] || ( column.default ) }}
+
+					//- control
+					.control(v-else-if='column.type == "control"' v-bind:style='styleCell( row, column.key )' ref='controls')
+						span.hover-text(v-if='hasHoverText( column )' v-bind:style='styleHover( row, column.key )') {{ getHoverText( row, column.key, column.hoverText ) }}
+						i.material-icons(v-if='column.hasOwnProperty("icon")') {{ column.icon }}
+						.button(v-else-if='column.hasOwnProperty("button")') {{ column.button }}
+
+					//- text column
+					p(v-else-if='column.type == "clickable"') {{ column.text }}
+
+					//- icon with click handler
+					.icon(v-else-if='column.type == "icon"')
+						span.hover-text(v-if='hasHoverText( column )' v-bind:style='styleHover( row, column.key )') {{ getHoverText( row, column.key, column.hoverText ) }}
+						i.material-icons.column-icon(v-bind:style='styleCell( row, column.key )') {{ column.icon }}
+
+
+					//- custom
+					.control(v-if='column.type == "custom"' v-bind:style='styleCell( row, column.key )')
+						span.hover-text(v-if='column.hasOwnProperty("hoverText")' v-bind:style='styleHover( row, column.key )') {{ getHoverText( row, column.key, column.hoverText ) }}
+						div(v-if='column.type == "custom"' v-html='renderCell( row, column.key )')
+
+			.row(v-if='!activeRows.length')
+				p {{ settings.loadingText }}
+
+		.bottom-bar.noselect
+			.viewing-count
+				p Viewing rows {{ firstRowInView }} - {{ firstRowInView + activeRows.length }} of {{ filteredRows.length }}
+			.page-container(v-if='noOfPages > 1')
+				.previous.page-button(v-if='activePage > 0' @click='activePage--')
+					p previous
+				.page-button-container
+					.page-button.sb-button(v-if='firstRowInView > 0', @click='activePage--') {{ activePage }}
+					.page-button.sb-button.active {{ activePage + 1 }}
+					.page-button.sb-button(v-if='lastRowInView < rows.length', @click='activePage++') {{ activePage + 2 }}
+				.next.page-button(v-if='noOfPages >= activePage + 2' @click='activePage++')
+					p next
+		.select-indicator(v-show='selectedRows.length > 0')
+			p  You have selected {{ selectedRows.length }} rows
+			.button(@click='emitSelection( selectedRows )') {{ settings.selectedButtonText }}

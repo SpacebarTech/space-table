@@ -1,0 +1,21 @@
+{
+  "name": "space-table",
+  "version": "1.0.0",
+  "description": "Open Source Space Table",
+  "main": "app.js",
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/spacebartech/space-table.git"
+  },
+  "author": "Spacebar Technologies, Inc.",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/spacebartech/space-table/issues"
+  },
+  "homepage": "https://github.com/spacebartech/space-table#readme",
+  "dependencies": {
+    "express": "^4.16.3",
+    "pug": "^2.0.3"
+  }
+}

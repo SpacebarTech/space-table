@@ -1,0 +1,53 @@
+//-
+	- Bend Table
+	- v 1.0 3/23/2018
+	-//
+script#bend-table(type='text/x-template')
+	.bend-table
+		h4.bendTitle.truncate(v-if='bData.LastName && bData.FirstName') Details: {{ bData.LastName + ',' + bData.FirstName }}
+		h4.bendTitle.truncate(v-if='!bData.LastName || !bData.FirstName') Details:
+		.bend-rows
+			.bend-row(v-for='column in bColumns')
+				bend-row(
+				v-if='!column.Editable && column.Bend'
+				:DisplayName='column.DisplayName'
+				:ColumnName='column.ColumnName'
+				:Description='column.Description'
+				:data='bData'
+				)
+				bend-editable-row(
+				v-if='column.Editable && column.Bend'
+				:DisplayName='column.DisplayName'
+				:ColumnName='column.ColumnName'
+				:Description='column.Description'
+				:data='bData'
+				)
+
+
+script#bend-row(type='text/x-template')
+	div
+		.bendLabel {{ displayName }} :
+		.bendText(:id="'data'+columnName") {{ dataValue }}
+		.bendDesc {{ description }}
+
+
+script#bend-editable-row(type='text/x-template')
+	div
+		.bendLabel(:id="'col'+columnName") {{ displayName }} :
+		.bendInputContainer
+			input.bendInput(
+			v-if='!/comment/i.test(columnName)'
+			type='text'
+			:id="'data'+columnName"
+			placeholder='column.bData.Placeholder'
+			v-model='dataValue'
+			)
+			textarea.bendInput(
+			v-if='/comment/i.test(columnName)'
+			type='text'
+			:id="'data'+columnName"
+			placeholder='column.bData.Placeholder'
+			v-model='dataValue'
+			)
+
+
